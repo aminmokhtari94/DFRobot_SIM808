@@ -1070,29 +1070,56 @@ bool DFRobot_SIM808::parseGPRMC(char *gpsbuffer)
 bool DFRobot_SIM808::getGNSINF()
 {
     char c;
+    static bool endflag = false;
+    static char count;
 
-    while (serialSIM808->available())
+    while (serialSIM808->available()) //閿熸枻鎷烽敓鏂ゆ嫹閿熸枻鎷烽敓鏂ゆ嫹閿熸枻鎷�
     {
-        switch (c)
+        c = serialSIM808->read();
+        if (endflag)
         {
-        case '+':
-            receivedStackIndex = 0;
-            receivedStack[receivedStackIndex++] = c;
-            break;
-        case '\n':
-            return true;
-            break;
-        default:
-            if (receivedStackIndex < 120)
+            if (count--)
+            {
                 receivedStack[receivedStackIndex++] = c;
-            break;
+            }
+            else
+            {
+                endflag = false;
+                receivedStack[receivedStackIndex] = '\0';
+                return true;
+            }
         }
+        else
+        {
+            switch (c)
+            {
+
+            case '+':
+                receivedStackIndex = 0;
+                receivedStack[receivedStackIndex++] = c;
+                break;
+            case '\r':
+                endflag = true;
+                count = 2;
+                receivedStack[receivedStackIndex++] = c;
+                break;
+            default:
+                if (receivedStackIndex < 120)
+                    receivedStack[receivedStackIndex++] = c;
+                break;
+            }
+            return false;
+        }
+        return false;
     }
     return false;
 }
 
 bool DFRobot_SIM808::parseGNSINF(char *gpsbuffer)
 {
+    Serial.println("------------------");
+    Serial.println(gpsbuffer);
+    Serial.println("------------------");
     if (strstr(gpsbuffer, gnsinf) == NULL)
     {
         receivedStackIndex = 0;
@@ -1107,6 +1134,7 @@ bool DFRobot_SIM808::parseGNSINF(char *gpsbuffer)
             return false;
         }
     }
+    Serial.println("4");
 }
 
 // Parse a (potentially negative) number with up to 2 decimal digits -xxxx.yy
@@ -1251,7 +1279,12 @@ bool DFRobot_SIM808::getGNS()
         return false;
 
     // skip fix status
-    tok = strtok(receivedStack, ",");
+    tok = strtok(NULL, ",");
+    if (!tok)
+        return false;
+
+    // skip fix status
+    tok = strtok(NULL, ",");
     if (!tok)
         return false;
 
@@ -1264,6 +1297,7 @@ bool DFRobot_SIM808::getGNS()
     char *lat = strtok(NULL, ",");
     if (!lat)
         return false;
+    Serial.println(lat);
 
     // grab longitude
     char *lon = strtok(NULL, ",");
