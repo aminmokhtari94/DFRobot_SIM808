@@ -323,6 +323,7 @@ public:
     bool getLocation(const __FlashStringHelper *apn, float *longitude, float *latitude);
 
     //Open or Close GPS
+    bool turnOnGPS();
     bool attachGPS();
     bool detachGPS();
     bool turnOffGPS();
@@ -338,9 +339,12 @@ public:
     //parser Serial data
     bool parseGPRMC(char *gpsbuffer);
     bool getGPRMC();
+    bool getGNSINF();
+    bool parseGNSINF(char *gpsbuffer);
 
     //get GPS signal
     bool getGPS();
+    bool getGNS();
 
     SoftwareSerial *gprsSerial;
     HardwareSerial *hgprsSerial;
@@ -362,6 +366,16 @@ public:
         float heading;
         float altitude;
     } GPSdata;
+
+    struct gnssdata
+    {
+        float lat;
+        float lon;
+        float altitude;
+        float speed;
+        float heading;
+        uint8_t fix;
+    } GNSdata;
 
     struct DMSData
     {

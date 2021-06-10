@@ -37,6 +37,7 @@ DFRobot_SIM808 *DFRobot_SIM808::inst;
 char receivedStackIndex = 0;
 char receivedStack[130];
 const char *des = "$GPRMC";
+const char *gnsinf = "+UGNSINF:";
 
 //char *receivedStack="$GPRMC,165445.000,A,3110.8635,N,12133.4627,E,0.58,70.26,220916,,,A*57";
 
@@ -962,13 +963,18 @@ bool DFRobot_SIM808::getLocation(const __FlashStringHelper *apn, float *longitud
     return false;
 }
 
-bool DFRobot_SIM808::attachGPS()
+bool DFRobot_SIM808::turnOnGPS()
 {
     if (!sim808_check_with_cmd("AT+CGNSPWR=1\r\n", "OK\r\n", CMD))
     {
         return false;
     }
-    if (!sim808_check_with_cmd("AT+CGNSTST=1\r\n", "OK\r\n", CMD))
+    return true;
+}
+
+bool DFRobot_SIM808::attachGPS()
+{
+    if (!sim808_check_with_cmd("AT+CGNSURC=3\r\n", "OK\r\n", CMD))
     {
         return false;
     }
@@ -977,12 +983,13 @@ bool DFRobot_SIM808::attachGPS()
 
 bool DFRobot_SIM808::detachGPS()
 {
-    if (!sim808_check_with_cmd("AT+CGNSTST=0\r\n", "OK\r\n", CMD))
+    if (!sim808_check_with_cmd("AT+CGNSURC=0\r\n", "OK\r\n", CMD))
     {
         return false;
     }
     return true;
 }
+
 bool DFRobot_SIM808::turnOffGPS()
 {
     if (!sim808_check_with_cmd("AT+CGNSPWR=0\r\n", "OK\r\n", CMD))
@@ -1055,6 +1062,48 @@ bool DFRobot_SIM808::parseGPRMC(char *gpsbuffer)
         {
             //Serial.print("NO :");
             //Serial.println(gpsbuffer[18]);
+            return false;
+        }
+    }
+}
+
+bool DFRobot_SIM808::getGNSINF()
+{
+    char c;
+
+    while (serialSIM808->available())
+    {
+        switch (c)
+        {
+        case '+':
+            receivedStackIndex = 0;
+            receivedStack[receivedStackIndex++] = c;
+            break;
+        case '\n':
+            return true;
+            break;
+        default:
+            if (receivedStackIndex < 120)
+                receivedStack[receivedStackIndex++] = c;
+            break;
+        }
+    }
+    return false;
+}
+
+bool DFRobot_SIM808::parseGNSINF(char *gpsbuffer)
+{
+    if (strstr(gpsbuffer, gnsinf) == NULL)
+    {
+        receivedStackIndex = 0;
+        return false;
+    }
+    else
+    {
+        if (gpsbuffer[12] == '1')
+            return true;
+        else
+        {
             return false;
         }
     }
@@ -1185,6 +1234,64 @@ bool DFRobot_SIM808::getGPS()
     // if (altitude == NULL){
     //   return true;
     //}
+    return true;
+}
+
+bool DFRobot_SIM808::getGNS()
+{
+    if (!getGNSINF())
+        return false;
+
+    if (!parseGNSINF(receivedStack))
+        return false;
+
+    // skip mode & power status
+    char *tok = strtok(receivedStack, ",");
+    if (!tok)
+        return false;
+
+    // skip fix status
+    tok = strtok(receivedStack, ",");
+    if (!tok)
+        return false;
+
+    // grab utc
+    // char *utc = strtok(NULL, ",");
+    // if (!utc)
+    //     return false;
+
+    // grab the latitude
+    char *lat = strtok(NULL, ",");
+    if (!lat)
+        return false;
+
+    // grab longitude
+    char *lon = strtok(NULL, ",");
+    if (!lon)
+        return false;
+
+    // grab altitude
+    char *altitude = strtok(NULL, ",");
+    if (!altitude)
+        return false;
+
+    // grab speed
+    char *speed = strtok(NULL, ",");
+    if (!speed)
+        return false;
+
+    // grab speed
+    char *heading = strtok(NULL, ",");
+    if (!heading)
+        return false;
+
+    // GNSdata.utc = utc;
+    GNSdata.lat = atof(lat);
+    GNSdata.lon = atof(lon);
+    GNSdata.altitude = atof(altitude);
+    GNSdata.speed = atof(speed);
+    GNSdata.heading = atof(heading);
+
     return true;
 }
 
