@@ -369,12 +369,13 @@ public:
 
     struct gnssdata
     {
-        float lat;
-        float lon;
-        float altitude;
-        float speed;
-        float heading;
         uint8_t fix;
+        char utc[18];
+        char lat[10];
+        char lon[11];
+        char altitude[8];
+        char speed[6];
+        char heading[6];
     } GNSdata;
 
     struct DMSData

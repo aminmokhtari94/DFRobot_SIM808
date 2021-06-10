@@ -1278,26 +1278,24 @@ bool DFRobot_SIM808::getGNS()
     if (!tok)
         return false;
 
-    // skip fix status
     tok = strtok(NULL, ",");
     if (!tok)
         return false;
 
-    // skip fix status
-    tok = strtok(NULL, ",");
-    if (!tok)
+    // skip fix
+    char *fix = strtok(NULL, ",");
+    if (!fix)
         return false;
 
     // grab utc
-    // char *utc = strtok(NULL, ",");
-    // if (!utc)
-    //     return false;
+    char *utc = strtok(NULL, ",");
+    if (!utc)
+        return false;
 
     // grab the latitude
     char *lat = strtok(NULL, ",");
     if (!lat)
         return false;
-    Serial.println(lat);
 
     // grab longitude
     char *lon = strtok(NULL, ",");
@@ -1319,12 +1317,13 @@ bool DFRobot_SIM808::getGNS()
     if (!heading)
         return false;
 
-    // GNSdata.utc = utc;
-    GNSdata.lat = atof(lat);
-    GNSdata.lon = atof(lon);
-    GNSdata.altitude = atof(altitude);
-    GNSdata.speed = atof(speed);
-    GNSdata.heading = atof(heading);
+    GNSdata.fix = atoi(fix);
+    sprintf(GNSdata.utc, "%s", utc);
+    sprintf(GNSdata.lat, "%s", lat);
+    sprintf(GNSdata.lon, "%s", lon);
+    sprintf(GNSdata.altitude, "%s", altitude);
+    sprintf(GNSdata.speed, "%s", speed);
+    sprintf(GNSdata.heading, "%s", heading);
 
     return true;
 }
